@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livro de Câmbio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #efe7d3;
+    --paper-dark: #e3d9bd;
+    --ink: #212f3a;
+    --ink-soft: #5c6a73;
+    --green: #2f6f4e;
+    --green-soft: #dce9df;
+    --red: #a23b2e;
+    --red-soft: #f1ddd8;
+    --line: #c7bb98;
+    --gold: #a9852f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 28px 18px 60px;
+  }
+  .sheet{
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1{
+    font-family:'Lora', serif;
+    font-weight:600;
+    font-size: 1.7rem;
+    margin: 0 0 2px;
+    letter-spacing: 0.2px;
+  }
+  .sub{
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    margin: 0 0 22px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+  }
+  .lucro-banner{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    background: var(--green-soft);
+    border: 1px solid var(--green);
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+  .lucro-banner.negativo{ background: var(--red-soft); border-color: var(--red); }
+  .lucro-banner .label{
+    font-family:'Lora', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+  .lucro-banner .valor{
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--green);
+  }
+  .lucro-banner.negativo .valor{ color: var(--red); }
+
+  section{ margin-bottom: 26px; }
+  .section-title{
+    font-family:'Lora', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0 0 10px;
+    display:flex;
+    align-items:baseline;
+    gap: 8px;
+  }
+  .section-title small{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:400;
+    color: var(--ink-soft);
+    font-size:0.72rem;
+  }
+
+  .posicoes{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .posicao{
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.35);
+  }
+  .posicao .moeda{ font-family:'Lora', serif; font-weight:600; font-size:0.95rem; }
+  .posicao .qtd{ font-size:1.15rem; margin: 4px 0 2px; }
+  .posicao .custo{ font-size:0.72rem; color: var(--ink-soft); }
+  .posicao .qtd.neg{ color: var(--red); }
+
+  form{
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 0;
+  }
+  .linha-form{
+    display:flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .campo{ flex:1; min-width: 140px; }
+  .campo label{
+    display:block;
+    font-size: 0.68rem;
+    text-transform: none;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .campo .par{ display:flex; gap:6px; }
+  select, input[type=number], input[type=text]{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    padding: 7px 8px;
+    border: 1px solid var(--ink);
+    background: #fff;
+    color: var(--ink);
+    width: 100%;
+  }
+  select{ flex: 0 0 70px; }
+  button{
+    font-family:'Lora', serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px 18px;
+    cursor: pointer;
+  }
+  button:hover{ background: var(--green); }
+  button.secundario{
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+  }
+  button.secundario:hover{ background: var(--ink); color: var(--paper); }
+  button.secundario.confirmando{ background: var(--red); color: #fff; border-color: var(--red); }
+  .acoes-cel{ text-align:right; }
+  details.acoes{ position:relative; display:inline-block; }
+  details.acoes summary{
+    list-style:none; cursor:pointer; padding: 2px 8px;
+    border: 1px solid var(--line); font-size: 0.85rem; user-select:none;
+  }
+  details.acoes summary::-webkit-details-marker{ display:none; }
+  details.acoes[open] summary{ border-color: var(--ink); }
+  details.acoes .del-btn{
+    position:absolute; right:0; top: calc(100% + 2px);
+    background: var(--red); color:#fff; border:none;
+    font-family:'IBM Plex Mono', monospace; font-size:0.72rem;
+    padding: 6px 10px; white-space:nowrap; z-index: 5; cursor:pointer;
+  }
+  details.acoes .del-btn:hover{ background: #7e2e24; }
+  .erro{ color: var(--red); font-size: 0.8rem; margin-top: -4px; margin-bottom: 10px; min-height: 1em; }
+
+  details{ border: 1px solid var(--line); padding: 10px 12px; }
+  details summary{ cursor:pointer; font-size:0.8rem; color: var(--ink-soft); }
+  .ajuste-grid{ margin-top:12px; display:grid; grid-template-columns: repeat(3,1fr); gap:10px; }
+  .ajuste-grid .campo label{ font-size:0.68rem; }
+
+  table{ width:100%; border-collapse: collapse; font-size: 0.78rem; }
+  thead th{
+    text-align:left;
+    border-bottom: 1px solid var(--ink);
+    padding: 6px 6px;
+    font-weight:500;
+    color: var(--ink-soft);
+    font-size: 0.68rem;
+  }
+  tbody td{
+    padding: 7px 6px;
+    border-bottom: 1px dashed var(--line);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even){ background: var(--paper-dark); }
+  .lucro-cel.pos{ color: var(--green); font-weight:600; }
+  .lucro-cel.neg{ color: var(--red); font-weight:600; }
+  .lucro-cel.diferido{ color: var(--ink-soft); font-style: italic; font-size:0.72rem; }
+  .vazio{ color: var(--ink-soft); font-size:0.85rem; padding: 14px 0; }
+  .rodape{ display:flex; justify-content: space-between; align-items:center; margin-top: 8px; }
+  .nota-metodo{
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    border-left: 2px solid var(--gold);
+    padding-left: 10px;
+  }
+  @media (max-width: 480px){
+    .posicoes{ grid-template-columns: 1fr; }
+    .ajuste-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <h1>Livro de Câmbio</h1>
+  <p class="sub">Controle de posições e lucro realizado — BRL · BOB · USD</p>
+
+  <div id="lucroBanner" class="lucro-banner">
+    <span class="label">Lucro acumulado (realizado em bolivianos)</span>
+    <span class="valor" id="lucroValor">Bs 0,00</span>
+  </div>
+
+  <section>
+    <p class="section-title">Posições <small>saldo em caixa e custo médio</small></p>
+    <div class="posicoes" id="posicoes"></div>
+  </section>
+
+  <section>
+    <p class="section-title">Nova transação</p>
+    <form id="formTransacao">
+      <div class="linha-form">
+        <div class="campo">
+          <label>Você recebeu</label>
+          <div class="par">
+            <select id="recvMoeda">
+              <option value="BRL">BRL</option>
+              <option value="BOB">BOB</option>
+              <option value="USD">USD</option>
+            </select>
+            <input type="number" id="recvValor" step="0.01" min="0" placeholder="valor">
+          </div>
+        </div>
+        <div class="campo">
+          <label>Você pagou</label>
+          <div class="par">
+            <select id="payMoeda">
+              <option value="BOB">BOB</option>
+              <option value="BRL">BRL</option>
+              <option value="USD">USD</option>
+            </select>
+            <input type="number" id="payValor" step="0.01" min="0" placeholder="valor">
+          </div>
+        </div>
+      </div>
+      <div class="linha-form">
+        <div class="campo">
+          <label>Nota (opcional)</label>
+          <input type="text" id="nota" placeholder="ex: cliente João, Pix">
+        </div>
+      </div>
+      <div class="erro" id="erroForm"></div>
+      <button type="submit">Registrar transação</button>
+    </form>
+  </section>
+
+  <section>
+    <details>
+      <summary>Ajustar saldo manualmente (correção ou saldo inicial)</summary>
+      <div class="ajuste-grid" id="ajusteGrid"></div>
+      <div style="margin-top:10px;">
+        <button type="button" class="secundario" id="salvarAjuste">Salvar ajuste</button>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <p class="section-title">Backup <small>salve seu histórico num arquivo</small></p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" class="secundario" id="exportarBtn">Exportar backup (.json)</button>
+      <button type="button" class="secundario" id="importarBtn">Importar backup</button>
+      <input type="file" id="importarInput" accept="application/json" style="display:none;">
+    </div>
+    <div class="erro" id="erroImport"></div>
+  </section>
+
+  <section>
+    <p class="section-title">Histórico</p>
+    <div id="historicoWrap"></div>
+    <div class="rodape">
+      <span></span>
+      <button type="button" class="secundario" id="resetTudo">Apagar tudo</button>
+    </div>
+  </section>
+
+  <p class="nota-metodo">
+    Método: custo médio ponderado. Quando você recebe BRL e entrega moeda estrangeira, o lucro é
+    apurado na hora (diferença entre o que recebeu e o custo médio da moeda entregue). Quando você
+    recebe moeda estrangeira pagando em BRL, isso só atualiza o custo médio — sem lucro ainda,
+    porque a posição continua aberta. Trocas entre duas moedas estrangeiras transferem o custo,
+    e o lucro fica diferido até essa moeda virar reais.
+  </p>
+
+</div>
+
+<script>
+const CURR = ['BRL','BOB','USD'];
+const REF = 'BOB';
+
+function defaultState(){
+  return {
+    balances: {
+      BRL: { qty: 0, avgCost: 0 },
+      BOB: { qty: 0, avgCost: 1 },
+      USD: { qty: 0, avgCost: 0 }
+    },
+    transactions: [],
+    lucroAcumulado: 0
+  };
+}
+
+let state = null;
+
+function sanitizarEstado(){
+  if (!state || typeof state !== 'object') state = defaultState();
+  if (!state.balances) state.balances = defaultState().balances;
+  CURR.forEach(cur => {
+    if (!state.balances[cur]) state.balances[cur] = { qty: 0, avgCost: cur === REF ? 1 : 0 };
+    if (typeof state.balances[cur].qty !== 'number' || isNaN(state.balances[cur].qty)) state.balances[cur].qty = 0;
+    if (typeof state.balances[cur].avgCost !== 'number' || isNaN(state.balances[cur].avgCost)) state.balances[cur].avgCost = cur === REF ? 1 : 0;
+  });
+  if (!Array.isArray(state.transactions)) state.transactions = [];
+  let precisaSalvar = false;
+  state.transactions.forEach(t => {
+    if (!t.id){ t.id = gerarId(); precisaSalvar = true; }
+  });
+  if (typeof state.lucroAcumulado !== 'number' || isNaN(state.lucroAcumulado)) state.lucroAcumulado = 0;
+  return precisaSalvar;
+}
+
+async function loadState(){
+  try{
+    const raw = localStorage.getItem('cambio:state');
+    state = raw ? JSON.parse(raw) : defaultState();
+  }catch(e){
+    state = defaultState();
+  }
+  const precisaSalvar = sanitizarEstado();
+  if (precisaSalvar) await saveState();
+  render();
+}
+
+async function saveState(){
+  try{
+    localStorage.setItem('cambio:state', JSON.stringify(state));
+  }catch(e){
+    console.error('Falha ao salvar', e);
+  }
+}
+
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function fmt(n, moeda){
+  const v = Number(n)||0;
+  const prefix = moeda === 'BRL' ? 'R$ ' : moeda === 'USD' ? 'US$ ' : 'Bs ';
+  return prefix + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function gerarId(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+
+function aplicarTransacao(recvCur, recvAmt, payCur, payAmt){
+  let lucro = null;
+  const b = state.balances;
+  if (!b[recvCur] || !b[payCur] || !(recvAmt > 0) || !(payAmt > 0)){
+    console.warn('Transação ignorada no recálculo (dados inválidos):', recvCur, recvAmt, payCur, payAmt);
+    return null;
+  }
+
+  if (payCur === REF){
+    // Recebendo moeda estrangeira (recvCur), pagando em reais
+    const cur = recvCur;
+    const oldQty = b[cur].qty, oldCost = b[cur].avgCost;
+    if (oldQty >= 0){
+      const newQty = oldQty + recvAmt;
+      b[cur].avgCost = newQty > 0 ? (oldQty*oldCost + payAmt) / newQty : oldCost;
+      b[cur].qty = newQty;
+    } else {
+      const cobertura = Math.min(recvAmt, -oldQty);
+      const payParaCobertura = payAmt * (cobertura/recvAmt);
+      lucro = cobertura*oldCost - payParaCobertura;
+      const restanteQty = recvAmt - cobertura;
+      const restantePay = payAmt - payParaCobertura;
+      if (restanteQty > 0){
+        b[cur].avgCost = restantePay / restanteQty;
+      }
+      b[cur].qty = oldQty + recvAmt;
+    }
+    b[REF].qty -= payAmt;
+  } else if (recvCur === REF){
+    const cur = payCur;
+    const oldQty = b[cur].qty, oldCost = b[cur].avgCost;
+    if (oldQty <= 0){
+      const newQty = oldQty - payAmt;
+      const oldMag = -oldQty, newMag = -newQty;
+      b[cur].avgCost = newMag > 0 ? (oldMag*oldCost + recvAmt) / newMag : oldCost;
+      b[cur].qty = newQty;
+    } else {
+      const vendaDoEstoque = Math.min(payAmt, oldQty);
+      const recvParaVenda = recvAmt * (vendaDoEstoque/payAmt);
+      lucro = recvParaVenda - vendaDoEstoque*oldCost;
+      const restanteQty = payAmt - vendaDoEstoque;
+      const restanteRecv = recvAmt - recvParaVenda;
+      if (restanteQty > 0){
+        b[cur].avgCost = restanteRecv / restanteQty;
+      }
+      b[cur].qty = oldQty - payAmt;
+    }
+    b[REF].qty += recvAmt;
+  } else {
+    const valorImplicito = payAmt * b[payCur].avgCost;
+    const curIn = recvCur;
+    const oldQty = b[curIn].qty, oldCost = b[curIn].avgCost;
+    const newQty = oldQty + recvAmt;
+    b[curIn].avgCost = newQty > 0 ? (oldQty*oldCost + valorImplicito) / newQty : oldCost;
+    b[curIn].qty = newQty;
+    b[payCur].qty -= payAmt;
+  }
+
+  if (lucro !== null) state.lucroAcumulado += lucro;
+  return lucro;
+}
+
+function processarTransacao(recvCur, recvAmt, payCur, payAmt, nota){
+  const lucro = aplicarTransacao(recvCur, recvAmt, payCur, payAmt);
+  state.transactions.unshift({
+    id: gerarId(),
+    data: new Date().toISOString(),
+    recvCur, recvAmt, payCur, payAmt,
+    taxa: recvAmt > 0 ? (payAmt/recvAmt) : 0,
+    lucro, nota: nota || ''
+  });
+}
+
+function recalcularTudo(){
+  const emOrdemCronologica = [...state.transactions].reverse();
+  state.balances = defaultState().balances;
+  state.lucroAcumulado = 0;
+  emOrdemCronologica.forEach(t => {
+    t.lucro = aplicarTransacao(t.recvCur, t.recvAmt, t.payCur, t.payAmt);
+  });
+}
+
+function excluirTransacao(id){
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  recalcularTudo();
+}
+
+function render(){
+  // banner de lucro
+  const banner = document.getElementById('lucroBanner');
+  const valorEl = document.getElementById('lucroValor');
+  valorEl.textContent = fmt(state.lucroAcumulado, REF);
+  banner.classList.toggle('negativo', state.lucroAcumulado < 0);
+
+  // posições
+  const pos = document.getElementById('posicoes');
+  pos.innerHTML = CURR.map(cur => {
+    const b = state.balances[cur];
+    const negCls = b.qty < 0 ? 'neg' : '';
+    const custoLine = cur === REF
+      ? ''
+      : `<div class="custo">custo médio: ${fmt(b.avgCost, REF)} / unid · custo total: ${fmt(b.qty*b.avgCost, REF)}</div>`;
+    return `<div class="posicao">
+      <div class="moeda">${cur}</div>
+      <div class="qtd ${negCls}">${fmt(b.qty, cur)}</div>
+      ${custoLine}
+    </div>`;
+  }).join('');
+
+  // grid de ajuste
+  const ag = document.getElementById('ajusteGrid');
+  ag.innerHTML = CURR.map(cur => `
+    <div class="campo">
+      <label>${cur} — saldo</label>
+      <input type="number" step="0.01" class="ajusteQty" data-cur="${cur}" value="${state.balances[cur].qty}">
+      ${cur !== REF ? `<label style="margin-top:6px;">${cur} — custo médio (em BRL)</label>
+      <input type="number" step="0.0001" class="ajusteCost" data-cur="${cur}" value="${state.balances[cur].avgCost}">` : ''}
+    </div>
+  `).join('');
+
+  // histórico
+  const wrap = document.getElementById('historicoWrap');
+  if (state.transactions.length === 0){
+    wrap.innerHTML = '<p class="vazio">Nenhuma transação registrada ainda.</p>';
+  } else {
+    const rows = state.transactions.map(t => {
+      const dt = new Date(t.data);
+      const dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+      let lucroCel;
+      if (t.lucro === null || t.lucro === undefined){
+        lucroCel = '<span class="lucro-cel diferido">diferido</span>';
+      } else {
+        const cls = t.lucro >= 0 ? 'pos' : 'neg';
+        lucroCel = `<span class="lucro-cel ${cls}">${fmt(t.lucro, REF)}</span>`;
+      }
+      return `<tr>
+        <td>${dtStr}</td>
+        <td>+${fmt(t.recvAmt, t.recvCur)}</td>
+        <td>-${fmt(t.payAmt, t.payCur)}</td>
+        <td>${t.taxa.toFixed(4)}</td>
+        <td>${lucroCel}</td>
+        <td>${escapeHtml(t.nota)}</td>
+        <td class="acoes-cel">
+          <details class="acoes">
+            <summary>⋮</summary>
+            <button type="button" class="del-btn" data-id="${t.id}">Apagar transação</button>
+          </details>
+        </td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table>
+      <thead><tr><th>Data</th><th>Recebeu</th><th>Pagou</th><th>Taxa</th><th>Lucro</th><th>Nota</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+}
+
+document.getElementById('historicoWrap').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.del-btn');
+  if (!btn) return;
+  try{
+    excluirTransacao(btn.dataset.id);
+    await saveState();
+    render();
+  }catch(err){
+    console.error('Falha ao apagar transação', err);
+    const wrap = document.getElementById('historicoWrap');
+    const aviso = document.createElement('p');
+    aviso.className = 'erro';
+    aviso.textContent = 'Não consegui apagar essa transação (erro interno). Tenta recarregar a página.';
+    wrap.prepend(aviso);
+  }
+});
+
+document.getElementById('formTransacao').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const recvMoeda = document.getElementById('recvMoeda').value;
+  const payMoeda = document.getElementById('payMoeda').value;
+  const recvValor = parseFloat(document.getElementById('recvValor').value);
+  const payValor = parseFloat(document.getElementById('payValor').value);
+  const nota = document.getElementById('nota').value;
+  const erro = document.getElementById('erroForm');
+  erro.textContent = '';
+
+  if (recvMoeda === payMoeda){
+    erro.textContent = 'A moeda recebida e a moeda paga precisam ser diferentes.';
+    return;
+  }
+  if (!(recvValor > 0) || !(payValor > 0)){
+    erro.textContent = 'Informe valores maiores que zero para os dois lados.';
+    return;
+  }
+
+  processarTransacao(recvMoeda, recvValor, payMoeda, payValor, nota);
+  await saveState();
+  render();
+  document.getElementById('recvValor').value = '';
+  document.getElementById('payValor').value = '';
+  document.getElementById('nota').value = '';
+});
+
+document.getElementById('salvarAjuste').addEventListener('click', async () => {
+  document.querySelectorAll('.ajusteQty').forEach(inp => {
+    const cur = inp.dataset.cur;
+    state.balances[cur].qty = parseFloat(inp.value) || 0;
+  });
+  document.querySelectorAll('.ajusteCost').forEach(inp => {
+    const cur = inp.dataset.cur;
+    state.balances[cur].avgCost = parseFloat(inp.value) || 0;
+  });
+  await saveState();
+  render();
+});
+
+let resetArmed = false;
+let resetTimer = null;
+document.getElementById('resetTudo').addEventListener('click', async () => {
+  const btn = document.getElementById('resetTudo');
+  if (!resetArmed){
+    resetArmed = true;
+    btn.textContent = 'Confirmar? (clique de novo)';
+    btn.classList.add('confirmando');
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => {
+      resetArmed = false;
+      btn.textContent = 'Apagar tudo';
+      btn.classList.remove('confirmando');
+    }, 4000);
+    return;
+  }
+  clearTimeout(resetTimer);
+  resetArmed = false;
+  btn.textContent = 'Apagar tudo';
+  btn.classList.remove('confirmando');
+  state = defaultState();
+  await saveState();
+  render();
+});
+
+document.getElementById('exportarBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const hoje = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `livro-de-cambio-backup-${hoje}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importarBtn').addEventListener('click', () => {
+  document.getElementById('importarInput').click();
+});
+
+document.getElementById('importarInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  const erro = document.getElementById('erroImport');
+  erro.textContent = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try{
+      const importado = JSON.parse(reader.result);
+      if (!importado || typeof importado !== 'object' || !Array.isArray(importado.transactions)){
+        throw new Error('formato inválido');
+      }
+      state = importado;
+      sanitizarEstado();
+      recalcularTudo();
+      await saveState();
+      render();
+    }catch(err){
+      console.error('Falha ao importar backup', err);
+      erro.textContent = 'Não consegui ler esse arquivo como backup válido.';
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+loadState();
+</script>
+</body>
+</html>
